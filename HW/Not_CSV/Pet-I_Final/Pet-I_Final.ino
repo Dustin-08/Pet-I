@@ -4,6 +4,8 @@ Developed by Dustin Choi.
 Use Sensor: Arduino Pro Micro, MLX-90614, HC-06, SZH-, MPU 9250, Li-ion_Battery, Charging Module, RGB Led, SD Card Module
 */
 
+// ToDo: SD 카드 복구 기능 추가, Li-ion Battery
+
 // 0. Libraries
 
 #include "Wire.h"
@@ -64,6 +66,7 @@ Adafruit_MLX90614 mlx = Adafruit_MLX90614();
 
 // SZH-----------------------------------------------------------------------------
 #define USE_ARDUINO_INTERRUPTS true
+PulseSensorPlayground pulseSensor;
 
 const int PulseWire = 0;
 const int LED13 = 13;
@@ -77,6 +80,8 @@ void setup()
     BT_Init();
     MLX_Init();
     SZH_Init();
+    Battery_Init();
+    SdCard_Init();
 }
 
 // 4. setup() 모음
@@ -111,11 +116,21 @@ void SZH_Init(){
     }
 }
 
+void Battery_Init(){
+    // test
+}
+
+void SdCard_Init(){
+    // test
+}
+
 // 5. function 선언
-MPU_Loop();
-BT_Loop();
-MLX_Lopp();
-SZH_Loop();
+void MPU_Loop();
+void BT_Loop();
+void MLX_Lopp();
+void SZH_Loop();
+void Battery_Loop();
+void SdCard_Loop();
 
 // 6. function-----------------------------------------------------------------------------------------
 void MPU_Loop(){
@@ -125,13 +140,13 @@ void MPU_Loop(){
     getHeading();               
     getTiltHeading();
 
-    Serial.println("calibration parameter: ");
-    Serial.print(mx_centre);
-    Serial.print("         ");
-    Serial.print(my_centre);
-    Serial.print("         ");
-    Serial.println(mz_centre);
-    Serial.println("     ");
+    // Serial.println("calibration parameter: ");
+    // Serial.print(mx_centre);
+    // Serial.print("         ");
+    // Serial.print(my_centre);
+    // Serial.print("         ");
+    // Serial.println(mz_centre);
+    // Serial.println("     ");
 
 
     Serial.println("Acceleration(g) of X,Y,Z:");
@@ -146,31 +161,55 @@ void MPU_Loop(){
     Serial.print(Gxyz[1]);
     Serial.print(",");
     Serial.println(Gxyz[2]);
-    Serial.println("Compass Value of X,Y,Z:");
-    Serial.print(Mxyz[0]);
-    Serial.print(",");
-    Serial.print(Mxyz[1]);
-    Serial.print(",");
-    Serial.println(Mxyz[2]);
-    Serial.println("The clockwise angle between the magnetic north and X-Axis:");
-    Serial.print(heading);
-    Serial.println(" ");
-    Serial.println("The clockwise angle between the magnetic north and the projection of the positive X-Axis in the horizontal plane:");
-    Serial.println(tiltheading);
-    Serial.println("   ");
-    Serial.println();
-    delay(1000);
+    // Serial.println("Compass Value of X,Y,Z:");
+    // Serial.print(Mxyz[0]);
+    // Serial.print(",");
+    // Serial.print(Mxyz[1]);
+    // Serial.print(",");
+    // Serial.println(Mxyz[2]);
+    // Serial.println("The clockwise angle between the magnetic north and X-Axis:");
+    // Serial.print(heading);
+    // Serial.println(" ");
+    // Serial.println("The clockwise angle between the magnetic north and the projection of the positive X-Axis in the horizontal plane:");
+    // Serial.println(tiltheading);
+    // Serial.println("   ");
+    // Serial.println();
+    delay(60000);
 }
 
 void BT_Loop(){
     if (BT.available()) { // 블루투스가 연결되면
         data = BT.read(); // 데이터를 수신 받아서 읽음
         if (data == '1') { // 블루투스 연결 상태 확인
-            // 연결된 경우: Pet-I 작동 On
-            // BT.print();
+            // 연결된 경우: Pet-I 작동 On4
+            while(1){
+                BT.println("Pet-I Turn On");
+                delay(1000);
+            }
+            //BT.println("Pet-I Turn On");
             // delay(1000);
+            MPU_Loop();
+            BT.println("Acceleration(g) of X,Y,Z:");
+            BT.print(Axyz[0]);
+            BT.print(",");
+            BT.print(Axyz[1]);
+            BT.print(",");
+            BT.println(Axyz[2]);
+            BT.println("Gyro(degress/s) of X,Y,Z:");
+            BT.print(Gxyz[0]);
+            BT.print(",");
+            BT.print(Gxyz[1]);
+            BT.print(",");
+            BT.println(Gxyz[2]);
+            //BT.print("Acceleration(g) of X,Y,Z: " + Axyz[0] + ", ")
+            MLX_Loop();
+            SZH_Loop();
+            Battery_Loop();
+            SdCard_Loop();
         } else if (data == '0') {
             // 연결되지 않은 경우: Pet-I 작동 OFF
+            BT.println("Pet-I Turn Off");
+            delay(1000);
         }//else if (data == ''){
             // 특정값 수신시: 카메라 영상 보이기
         //}
@@ -190,25 +229,36 @@ void MLX_Loop(){
     float ambientAvg = ambientTotal / 10.0;
     float objectAvg = objectTotal / 10.0;
 
-    Serial.print("Ambient (Avg) = "); Serial.print(ambientAvg);
-    Serial.print("*C\tObject (Avg) = "); Serial.print(objectAvg); Serial.println("*C");
-    Serial.print("Ambient (Avg) = "); Serial.print(mlx.readAmbientTempF());
-    Serial.print("*F\tObject (Avg) = "); Serial.print(mlx.readObjectTempF()); Serial.println("*F");
+    //Serial.print("Ambient (Avg) = "); 
+    //Serial.print(ambientAvg);
+    Serial.print("Object AVG = "); 
+    Serial.println(objectAvg); // 실질적인 객체의 온도
+    //Serial.println("*C");
+    // Serial.print("Ambient (Avg) = "); Serial.print(mlx.readAmbientTempF());
+    // Serial.print("*F\tObject (Avg) = "); Serial.print(mlx.readObjectTempF()); Serial.println("*F");
 
-    Serial.println();
-    delay(500);
+    //Serial.println();
+    delay(60000); // 1분
 }
 
 void SZH_Loop(){
     int myBPM = pulseSensor.getBeatsPerMinute();
 
     if (pulseSensor.sawStartOfBeat()) {
-        Serial.println("♥  A HeartBeat Happened ! ");
+        //Serial.println("♥  A HeartBeat Happened ! ");
         Serial.print("BPM: ");
         Serial.println(myBPM);
     }
 
-    delay(20);
+    delay(60000);
+}
+
+void Battery_Loop(){
+    //test
+}
+
+void SdCard_Loop(){
+    //test
 }
 
 void getHeading(void)
@@ -336,8 +386,10 @@ void getCompassDate_calibrated ()
 // 7. void loop()----------------------------------------------------------------------------
 void loop()
 {
-    MPU_Loop();
+    //MPU_Loop();
     BT_Loop();
-    MLX_Loop();
-    SZH_Loop();
+    //MLX_Loop();
+    //SZH_Loop();
+    // Battery_Loop();
+    // SdCard_Loop();
 }
