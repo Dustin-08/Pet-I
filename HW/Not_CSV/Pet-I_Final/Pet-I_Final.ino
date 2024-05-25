@@ -5,7 +5,7 @@ Use Sensor: Arduino Pro Micro, MLX-90614, HC-06, SZH-, MPU 9250, Li-ion_Battery,
 */
 
 // 0. Libraries
-// #pragma region include 사용 용도?
+
 #include "Wire.h"
 #include "I2Cdev.h"
 #include "MPU9250.h"
@@ -13,10 +13,6 @@ Use Sensor: Arduino Pro Micro, MLX-90614, HC-06, SZH-, MPU 9250, Li-ion_Battery,
 #include <Adafruit_MLX90614.h>
 #include <PulseSensorPlayground.h>
 #include <SdFat.h>
-
-
-#include "csv.h"
-#include <math.h>
 
 // 1. 변수 선언
 // MPU--------------------------------------------------------------------------
