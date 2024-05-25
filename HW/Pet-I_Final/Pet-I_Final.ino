@@ -68,6 +68,7 @@ Adafruit_MLX90614 mlx = Adafruit_MLX90614();
 
 // SZH-----------------------------------------------------------------------------
 #define USE_ARDUINO_INTERRUPTS true
+PulseSensorPlayground pulseSensor;
 
 const int PulseWire = 0;
 const int LED13 = 13;
@@ -115,11 +116,21 @@ void SZH_Init(){
     }
 }
 
+void Battery_Init(){
+    // test
+}
+
+void SdCard_Init(){
+    // test
+}
+
 // 5. function 선언
-MPU_Loop();
-BT_Loop();
-MLX_Lopp();
-SZH_Loop();
+void MPU_Loop();
+void BT_Loop();
+void MLX_Lopp();
+void SZH_Loop();
+void Battery_Loop();
+void SdCard_Loop();
 
 // 6. function-----------------------------------------------------------------------------------------
 void MPU_Loop(){
@@ -213,6 +224,14 @@ void SZH_Loop(){
     }
 
     delay(20);
+}
+
+void Battery_Loop(){
+    //test
+}
+
+void SdCard_Loop(){
+    //test
 }
 
 void getHeading(void)
@@ -344,4 +363,6 @@ void loop()
     BT_Loop();
     MLX_Loop();
     SZH_Loop();
+    Battery_Loop();
+    SdCard_Loop();
 }
