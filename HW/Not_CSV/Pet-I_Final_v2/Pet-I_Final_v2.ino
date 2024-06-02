@@ -1,11 +1,18 @@
 /*
-This program developed for KMU_CapstoneDesign_Competiion.
+This program developed for KMU_Capstone_Design_Competiion.
 Developed by Dustin Choi.
-Use Sensor: Arduino Pro Micro, MLX-90614, HC-06, SZH-, MPU 9250, Li-ion_Battery, Charging Module, RGB Led, SD Card Module
+Used Sensor: Arduino Pro Mini, MLX-90614, HC-06, SZH-, MPU 9250, Li-ion_Battery, Charging Module, RGB Led, SD Card Module
 */
 
 // ToDo: SD 카드 복구 기능 추가, Li-ion Battery
 // ToDo: 리튬폴리머 배터리의 전압 및 잔량을 측정하면서 동시에 작동 시키는 방법은?
+// ToDo: 심박은 delay(60000)으로, 온도와 배터리는 delay(600000)으로
+// ToDo: 자이로로 state 파악
+// ToDo: 앱에서 id값 받으면 블루투스 기기명 변경
+// ToDo: 앱에서 RGB int 값 받으면 RGB Led에 값 적용
+// ToDo: Led 페어링 상태 표시
+// ToDo: 강아지 나이별로 주기 설정 후 적용
+// ToDo: 케이스에 회로도 적용
 
 // 0. Libraries
 
@@ -19,41 +26,7 @@ Use Sensor: Arduino Pro Micro, MLX-90614, HC-06, SZH-, MPU 9250, Li-ion_Battery,
 
 // 1. 변수 선언
 // MPU--------------------------------------------------------------------------
-MPU9250 accelgyro;
-I2Cdev   I2C_M;
-
-uint8_t buffer_m[6];
-
-int16_t ax, ay, az;
-int16_t gx, gy, gz;
-int16_t   mx, my, mz;
-
-float heading;
-float tiltheading;
-float Axyz[3];
-float Gxyz[3];
-float Mxyz[3];
-#define sample_num_mdate  5000
-volatile float mx_sample[3];
-volatile float my_sample[3];
-volatile float mz_sample[3];
-
-static float mx_centre = 0;
-static float my_centre = 0;
-static float mz_centre = 0;
-
-volatile int mx_max = 0;
-volatile int my_max = 0;
-volatile int mz_max = 0;
-
-volatile int mx_min = 0;
-volatile int my_min = 0;
-volatile int mz_min = 0;
-
-float temperature;
-float pressure;
-float atm;
-float altitude;
+MPU9250 mpu;
 
 // BT----------------------------------------------------------------------------
 #define BTtx       8 // 블루투스 모듈의 tx를 D8으로 설정
@@ -83,7 +56,7 @@ const float referenceVoltage = 5.0;
 // 아날로그 읽기 최대 값 (아두이노의 10비트 ADC는 0-1023 값을 가짐)
 const int maxADCValue = 1023;
 
-// 배터리 전압 최대 값 (예: 12V 배터리 사용 시)
+// 배터리 전압 최대 값 (5V 배터리 사용 시)
 const float maxBatteryVoltage = 5.0;
 
 // 3. void setup()
@@ -94,17 +67,17 @@ void setup()
     BT_Init();
     MLX_Init();
     SZH_Init();
-    //Battery_Init();
+    Battery_Init();
     SdCard_Init();
 }
 
 // 4. setup() 모음
 void MPU_Init(){
     Wire.begin();
-    Serial.println("Initializing I2C devices...");
-    accelgyro.initialize();
-    Serial.println("Testing device connections...");
-    Serial.println(accelgyro.testConnection() ? "MPU9250 connection successful" : "MPU9250 connection failed");
+    if (!mpu.setup(0x68)) {
+      Serial.println("MPU 연결 실패!");
+      while (1);
+    }
 }
 
 void BT_Init(){
