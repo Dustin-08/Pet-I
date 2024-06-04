@@ -1,5 +1,5 @@
 /*
-This program developed for KMU_CapstoneDesign_Competiion.
+This program developed for KMU_CapstoneDesign_Competition.
 Developed by Dustin Choi.
 Use Sensor: Arduino Pro Micro, MLX-90614, HC-06, SZH-, MPU 9250, Li-ion_Battery, Charging Module, RGB Led, SD Card Module
 */
