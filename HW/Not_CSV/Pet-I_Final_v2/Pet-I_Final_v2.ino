@@ -30,7 +30,7 @@ MPU9250 mpu;
 
 // BT----------------------------------------------------------------------------
 #define BTtx       8 // 블루투스 모듈의 tx를 D8으로 설정
-#define BTrx       9 // 블루투스 모듈의 rx를 D9로 설정
+#define BTrx       9 // 블루투스 모듈의 rx를 D9으로 설정
 
 SoftwareSerial BT(BTtx, BTrx); // tx, rx
 char data = 0; // 앱을 통해 0 또는 1이라는 문자열을 받을건데 0이 꺼지는 default 값이므로 0으로 설정
@@ -59,6 +59,12 @@ const int maxADCValue = 1023;
 // 배터리 전압 최대 값 (5V 배터리 사용 시)
 const float maxBatteryVoltage = 5.0;
 
+// 주기적 데이터 전송을 위한 타이머 변수
+unsigned long previousMillisHeartRate = 0;
+unsigned long previousMillisTempBattery = 0;
+const long intervalHeartRate = 60000; // 1분
+const long intervalTempBattery = 600000; // 10분
+
 // 3. void setup()
 void setup()
 {
@@ -81,7 +87,6 @@ void MPU_Init(){
 //    }
     Serial.println("MPU 연결 성공!");
 }
-
 
 void BT_Init(){
     BT.begin(9600); // BT를 보드레이트 9600으로 설정
@@ -113,10 +118,11 @@ void SdCard_Init(){
 // 5. function 선언
 void MPU_Loop();
 void BT_Loop();
-void MLX_Lopp();
+void MLX_Loop();
 void SZH_Loop();
 void Battery_Loop();
 void SdCard_Loop();
+void sendDataOverBluetooth();
 
 // 6. function-----------------------------------------------------------------------------------------
 void MPU_Loop(){
@@ -156,28 +162,31 @@ void MPU_Loop(){
 }
 
 void BT_Loop(){
+    unsigned long currentMillis = millis();
+
     if (BT.available()) { // 블루투스가 연결되면
         data = BT.read(); // 데이터를 수신 받아서 읽음
         if (data == '1') { // 블루투스 연결 상태 확인
-            // 연결된 경우: Pet-I 작동 On4
-            while(1){
-                BT.println("Pet-I Turn On");
-                delay(1000);
+            // 연결된 경우: Pet-I 작동 On
+            BT.println("Pet-I Turn On");
+            
+            // 1분마다 심박 전송
+            if (currentMillis - previousMillisHeartRate >= intervalHeartRate) {
+                previousMillisHeartRate = currentMillis;
+                SZH_Loop();
             }
-            //BT.println("Pet-I Turn On");
-            // delay(1000);
-            MPU_Loop();
-            MLX_Loop();
-            SZH_Loop();
-            Battery_Loop();
-            SdCard_Loop();
+
+            // 10분마다 온도 및 배터리 전송
+            if (currentMillis - previousMillisTempBattery >= intervalTempBattery) {
+                previousMillisTempBattery = currentMillis;
+                MLX_Loop();
+                Battery_Loop();
+            }
         } else if (data == '0') {
             // 연결되지 않은 경우: Pet-I 작동 OFF
             BT.println("Pet-I Turn Off");
             delay(1000);
-        }//else if (data == ''){
-            // 특정값 수신시: 카메라 영상 보이기
-        //}
+        }
     }
 }
 
@@ -194,28 +203,19 @@ void MLX_Loop(){
     float ambientAvg = ambientTotal / 10.0;
     float objectAvg = objectTotal / 10.0;
 
-    //Serial.print("Ambient (Avg) = "); 
-    //Serial.print(ambientAvg);
     Serial.print("Object AVG = "); 
     Serial.println(objectAvg); // 실질적인 객체의 온도
-    //Serial.println("*C");
-    // Serial.print("Ambient (Avg) = "); Serial.print(mlx.readAmbientTempF());
-    // Serial.print("*F\tObject (Avg) = "); Serial.print(mlx.readObjectTempF()); Serial.println("*F");
-
-    //Serial.println();
-    delay(60000); // 1분
+    sendDataOverBluetooth("Temperature", objectAvg);
 }
 
 void SZH_Loop(){
     int myBPM = pulseSensor.getBeatsPerMinute();
 
     if (pulseSensor.sawStartOfBeat()) {
-        //Serial.println("♥  A HeartBeat Happened ! ");
         Serial.print("BPM: ");
         Serial.println(myBPM);
+        sendDataOverBluetooth("HeartRate", myBPM);
     }
-
-    delay(60000);
 }
 
 void Battery_Loop(){
@@ -236,22 +236,22 @@ void Battery_Loop(){
     Serial.print("Battery Percentage: ");
     Serial.print(batteryPercentage);
     Serial.println(" %");
-  
-    // 1분 대기
-    delay(60000);
+
+    sendDataOverBluetooth("Battery", batteryPercentage);
 }
 
 void SdCard_Loop(){
     //test
 }
 
+void sendDataOverBluetooth(String dataType, float dataValue) {
+    BT.print(dataType);
+    BT.print(": ");
+    BT.println(dataValue);
+}
+
 // 7. void loop()----------------------------------------------------------------------------
 void loop()
 {
-    //MPU_Loop();
     BT_Loop();
-    //MLX_Loop();
-    //SZH_Loop();
-    // Battery_Loop();
-    // SdCard_Loop();
 }
