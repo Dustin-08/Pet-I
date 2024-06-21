@@ -175,7 +175,7 @@ void Battery_Loop();
 void SdCard_Loop();
 void RGB_Loop();
 void blinkRGB_Loop();
-void sendDataOverBluetooth();
+//void sendDataOverBluetooth();
 
 // 6. function-----------------------------------------------------------------------------------------
 void MPU_Loop(){
