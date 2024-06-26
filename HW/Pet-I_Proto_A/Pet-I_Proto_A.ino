@@ -33,6 +33,18 @@ const int PulseWire = 0; // A0핀
 int Threshold = 550;
 int myBPM;
 // Battery-----------------------------------------------------------------
+// 아날로그 핀 정의
+const int batteryPin = A1;
+// 전압 레퍼런스 값 (아두이노는 5V를 기준으로 함)
+const float referenceVoltage = 5.0;
+// 아날로그 읽기 최대 값 (아두이노의 10비트 ADC는 0-1023 값을 가짐)
+const int maxADCValue = 1023;
+// 배터리 전압 최대 값 (예: 12V 배터리 사용 시)
+const float maxBatteryVoltage = 4.7;
+
+int analogValue;
+float batteryVoltage;
+float batteryPercentage;
 // RGB_Led--------------------------------------------------------------
 // 3색 LED의 각 핀을 9, 10, 11번으로 설정합니다.(빨강 = 9, 초록 = 10, 파랑 = 11)
 int red = 9;
@@ -67,6 +79,7 @@ void SZH_Init(){
   }
 }
 // Battery-----------------------------------------------------------------
+// Battery는 Init이 필요 없음
 // RGB_Led--------------------------------------------------------------
 void RGB_Init(){
   pinMode(red, OUTPUT);
@@ -95,6 +108,7 @@ void MLX_Loop();
 // SZH---------------------------------------------------------------------
 void SZH_Loop();
 // Battery-----------------------------------------------------------------
+void Battery_Init();
 // RGB_Led--------------------------------------------------------------
 void Blink_RGB_Loop();
 void Static_RGB_Loop();
@@ -134,6 +148,25 @@ void SZH_Loop(){
   //delay(500);
 }
 // Battery-----------------------------------------------------------------
+void Battery_Init(){
+  // 배터리 핀에서 아날로그 값 읽기
+  analogValue = analogRead(batteryPin);
+
+  // 읽은 값을 실제 전압으로 변환
+  batteryVoltage = (analogValue * referenceVoltage) / maxADCValue;
+
+  // 배터리 전압 비율 계산 (0-1)
+  batteryPercentage = (batteryVoltage / maxBatteryVoltage) * 100;
+
+  // 배터리 전압과 잔량을 시리얼 모니터에 출력
+  Serial.print("[3]. Battery Voltage: ");
+  Serial.print(batteryVoltage);
+  Serial.print(" V, ");
+
+  Serial.print("[4]. Battery Percentage: ");
+  Serial.print(batteryPercentage);
+  Serial.print(" %, ");
+}
 // RGB_Led--------------------------------------------------------------
 void Blink_RGB_Loop(){
   digitalWrite(blue, HIGH);
@@ -171,6 +204,7 @@ void BT_Loop(){
     Static_RGB_Loop();
     MLX_Loop();
     SZH_Loop();
+    Battery_Init();
   }else if (!isConnected) {
     // 연결되지 않았을 때 빨강색과 초록색 LED가 0.5초 간격으로 깜빡임
     Serial.println("No Running...");
