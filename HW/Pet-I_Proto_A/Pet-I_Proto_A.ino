@@ -4,11 +4,13 @@ Developed by Dustin Choi.
 Used Sensor: Arduino Pro Mini, MLX-90614, MPU9250, MAX30102 or SZH-hws008, Li-ion_Battery, Charging Module, RGB Led, SD Card Module
 */
 
-// 최종 ToDo: SD 카드 백업, 자이로로 state 파악, 블루투스 값 나눠서 앱인벤터에 띄우기 
+// 최종 ToDo: SD 카드 백업, 블루투스 값 나눠서 앱인벤터에 띄우기 
 
 // 0. Libraries
 #include "Wire.h"
 #include "I2Cdev.h"
+// MPU-------------------------------------------------------------------
+#include "MPU9250.h"
 // MLX--------------------------------------------------------------------
 #include <Adafruit_MLX90614.h>
 // SZH---------------------------------------------------------------------
@@ -21,6 +23,19 @@ Used Sensor: Arduino Pro Mini, MLX-90614, MPU9250, MAX30102 or SZH-hws008, Li-io
 
 // 1. 변수 선언
 // MPU--------------------------------------------------------------------
+MPU9250 accelgyro; // MPU9250 객체 생성
+I2Cdev I2C_M;
+
+uint8_t buffer_m[6];
+int16_t ax, ay, az;
+int16_t gx, gy, gz;
+int16_t mx, my, mz;
+float Axyz[3];
+float Gxyz[3];
+
+// 상태를 저장할 변수
+enum DogState { WALKING, RUNNING, SHAKING, STILL }; // 총 4개의 상태로 분류
+DogState currentState; // 강아지 현재 상태
 // MLX--------------------------------------------------------------------
 Adafruit_MLX90614 mlx = Adafruit_MLX90614();
 
@@ -62,6 +77,10 @@ char data = 0; // 앱을 통해 0 또는 1이라는 문자열을 받을건데 0�
 
 // 2. setup() 함수 모음
 // MPU--------------------------------------------------------------------
+void MPU_Init(){
+  Wire.begin();
+  accelgyro.initialize();
+}
 // MLX--------------------------------------------------------------------
 void MLX_Init(){
   if (!mlx.begin()) {
@@ -87,6 +106,9 @@ void RGB_Init(){
   pinMode(blue, OUTPUT);
 }
 // SD----------------------------------------------------------------------
+//void SD_Init(){
+//  dd
+//}
 // BT-----------------------------------------------------------------------
 void BT_Init(){
   BT.begin(9600); // BT를 보드레이트 9600으로 설정
@@ -95,29 +117,54 @@ void BT_Init(){
 // 3. setup() 부분
 void setup(){
   Serial.begin(9600);    // initialize serial communication
+  MPU_Init();
   MLX_Init();
   SZH_Init();
   RGB_Init();
+  //SD_Init();
   BT_Init();
 }
 
 // 4. loop() 함수 전방 선언
 // MPU--------------------------------------------------------------------
+void MPU_Loop();
 // MLX--------------------------------------------------------------------
 void MLX_Loop();
 // SZH---------------------------------------------------------------------
 void SZH_Loop();
 // Battery-----------------------------------------------------------------
-void Battery_Init();
+void Battery_Loop();
 // RGB_Led--------------------------------------------------------------
 void Blink_RGB_Loop();
 void Static_RGB_Loop();
 // SD----------------------------------------------------------------------
+//void SD_Loop();
 // BT-----------------------------------------------------------------------
-void BT_Init();
+void BT_Loop();
 
 // 5. loop() 함수 모음
 // MPU--------------------------------------------------------------------
+void MPU_Loop(){
+  getAccel_Data();
+    getGyro_Data();
+
+    determineState();
+
+    switch(currentState) {
+        case WALKING:
+            Serial.print("[5]. State: 걷기, ");
+            break;
+        case RUNNING:
+            Serial.print("[5]. State: 뛰기, ");
+            break;
+        case SHAKING:
+            Serial.print("[5]. State: 털기, ");
+            break;
+        case STILL:
+            Serial.print("[5]. State: Idle, ");
+            break;
+    }
+}
 // MLX--------------------------------------------------------------------
 void MLX_Loop(){
   objectTotal = 0;
@@ -148,7 +195,7 @@ void SZH_Loop(){
   //delay(500);
 }
 // Battery-----------------------------------------------------------------
-void Battery_Init(){
+void Battery_Loop(){
   // 배터리 핀에서 아날로그 값 읽기
   analogValue = analogRead(batteryPin);
 
@@ -184,6 +231,9 @@ void Static_RGB_Loop(){
   digitalWrite(green, HIGH);
 }
 // SD----------------------------------------------------------------------
+//void SD_Loop(){
+//  dd
+//}
 // BT-----------------------------------------------------------------------
 void BT_Loop(){
   // 블루투스 모듈 수신 확인용
@@ -204,7 +254,9 @@ void BT_Loop(){
     Static_RGB_Loop();
     MLX_Loop();
     SZH_Loop();
-    Battery_Init();
+    Battery_Loop();
+    //SD_Loop();
+    MPU_Loop();
   }else if (!isConnected) {
     // 연결되지 않았을 때 빨강색과 초록색 LED가 0.5초 간격으로 깜빡임
     Serial.println("No Running...");
@@ -226,3 +278,36 @@ void loop(){
 }
 
 // 7. Extra()
+void determineState() {
+    // 가속도 값의 크기를 계산
+    float accelMagnitude = sqrt(Axyz[0]*Axyz[0] + Axyz[1]*Axyz[1] + Axyz[2]*Axyz[2]);
+    // 자이로 값의 크기를 계산
+    float gyroMagnitude = sqrt(Gxyz[0]*Gxyz[0] + Gxyz[1]*Gxyz[1] + Gxyz[2]*Gxyz[2]);
+
+    // 상태 결정 로직 (범위와 조건은 상황에 따라 조정 필요)
+    if (accelMagnitude < 1.05 && gyroMagnitude < 10) {
+        currentState = STILL;
+    } else if (gyroMagnitude > 100) {
+        currentState = SHAKING;
+    } else if (accelMagnitude < 1.2) {
+        currentState = WALKING;
+    } else {
+        currentState = RUNNING;
+    }
+}
+
+void getAccel_Data(void)
+{
+    accelgyro.getMotion9(&ax, &ay, &az, &gx, &gy, &gz, &mx, &my, &mz);
+    Axyz[0] = (float)ax / 16384;
+    Axyz[1] = (float)ay / 16384;
+    Axyz[2] = (float)az / 16384;
+}
+
+void getGyro_Data(void)
+{
+    accelgyro.getMotion9(&ax, &ay, &az, &gx, &gy, &gz, &mx, &my, &mz);
+    Gxyz[0] = (float)gx * 250 / 32768;
+    Gxyz[1] = (float)gy * 250 / 32768;
+    Gxyz[2] = (float)gz * 250 / 32768;
+}
