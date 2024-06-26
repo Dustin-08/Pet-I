@@ -5,13 +5,13 @@
 MPU9250 mpu;
 
 void setup() {
-  Serial.begin(115200);
+  Serial.begin(9600);
   Wire.begin();
 
-  if (!mpu.setup(0x68)) {
-    Serial.println("MPU 연결 실패!");
-    while (1);
-  }
+//  if (!mpu.setup(0x68)) {
+//    Serial.println("MPU 연결 실패!");
+//    while (1);
+//  }
 }
 
 void loop() {
