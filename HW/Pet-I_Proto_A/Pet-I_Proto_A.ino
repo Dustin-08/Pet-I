@@ -55,7 +55,7 @@ const float referenceVoltage = 5.0;
 // 아날로그 읽기 최대 값 (아두이노의 10비트 ADC는 0-1023 값을 가짐)
 const int maxADCValue = 1023;
 // 배터리 전압 최대 값 (예: 12V 배터리 사용 시)
-const float maxBatteryVoltage = 4.7;
+const float maxBatteryVoltage = 4.2;
 
 int analogValue;
 float batteryVoltage;
@@ -152,16 +152,20 @@ void MPU_Loop(){
 
     switch(currentState) {
         case WALKING:
-            Serial.print("[5]. State: 걷기, ");
+            Serial.print("[4]. State: 걷기");
+            BT.print("걷기"); // for Debuging
             break;
         case RUNNING:
-            Serial.print("[5]. State: 뛰기, ");
+            Serial.print("[4]. State: 뛰기");
+            BT.print("뛰기");  // for Debuging
             break;
         case SHAKING:
-            Serial.print("[5]. State: 털기, ");
+            Serial.print("[4]. State: 털기");
+            BT.print("털기");  // for Debuging
             break;
         case STILL:
-            Serial.print("[5]. State: Idle, ");
+            Serial.print("[4]. State: Idle");
+            BT.print("Idle");  // for Debuging
             break;
     }
 }
@@ -176,23 +180,28 @@ void MLX_Loop(){
   //Serial.print("1. MLXObject (Avg): ");
   Serial.print("[1] Temp: ");
   Serial.print(objectAvg);
+  //Serial.print("27.47");  // for Debuging
   //Serial.println("*C");
   Serial.print(" *C, ");
-  BT.print(objectAvg);
+  //BT.print(objectAvg);  // for Debuging
   //delay(500);
 }
 // SZH---------------------------------------------------------------------
 void SZH_Loop(){
   myBPM = pulseSensor.getBeatsPerMinute();
 
-  if (pulseSensor.sawStartOfBeat()) {
-    Serial.print("[2] BPM: ");
-    //Serial.println(myBPM);
-    Serial.print(myBPM);
-    Serial.print(", ");
-  }
+//  if (pulseSensor.sawStartOfBeat()) {
+//    Serial.print("[2] BPM: ");
+//    //Serial.println(myBPM);
+//    Serial.print(myBPM);
+//    Serial.print(", ");
+//  }
 
   //delay(500);
+  Serial.print("[2] BPM: ");
+    Serial.println(myBPM);
+    //Serial.print("96");  // for Debuging
+    Serial.print(", ");
 }
 // Battery-----------------------------------------------------------------
 void Battery_Loop(){
@@ -206,11 +215,12 @@ void Battery_Loop(){
   batteryPercentage = (batteryVoltage / maxBatteryVoltage) * 100;
 
   // 배터리 전압과 잔량을 시리얼 모니터에 출력
-  Serial.print("[3]. Battery Voltage: ");
-  Serial.print(batteryVoltage);
-  Serial.print(" V, ");
+//  Serial.print("[3]. Battery Voltage: ");
+//  Serial.print(batteryVoltage);
+//  Serial.print(" V, ");
 
-  Serial.print("[4]. Battery Percentage: ");
+  Serial.print("[3]. Battery Percentage: ");
+  //Serial.print("98.8");  // for Debuging
   Serial.print(batteryPercentage);
   Serial.print(" %, ");
 }
