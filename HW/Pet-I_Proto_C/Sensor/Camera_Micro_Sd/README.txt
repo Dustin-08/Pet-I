@@ -1,0 +1,1 @@
+sdcard.py를 Arduino Pro Nicla Vision 자체에 넣어두시고, Camera_Micro_Sd.py 예제 코드를 OpenMV IDE에서 동작시키면 되십니다!
