@@ -84,7 +84,7 @@ void loop() {
     IMU.readGyroscope(gx, gy, gz);
 
     snprintf(ptArrCompleteData[0], sizeof(ptArrCompleteData[0]), " %.2f| %.1f V|", objectTemp, beatsPerMinute);
-    snprintf(ptArrCompleteData[1], sizeof(ptArrCompleteData[1]), " %.2f| %.2f| %.2f A", ax, ay, az);
+    snprintf(ptArrCompleteData[1], sizeof(ptArrCompleteData[1]), " %.2f| %.2f| %.2fA", ax, ay, az);
     snprintf(ptArrCompleteData[2], sizeof(ptArrCompleteData[2]), "%.2f| %.2f| %.2f!", gx, gy, gz);
     
     for (int i = 0; i < 3; i++) {
