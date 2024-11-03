@@ -14,6 +14,7 @@ byte rateSpot = 0;
 long lastBeat = 0;        // Time at which the last beat occurred
 float beatsPerMinute;
 int beatAvg;
+float objectTemp;
 
 BLEService sensorDataService("180D");
 BLEStringCharacteristic combinedDataCharacteristic("2A57", BLERead | BLENotify, 20);
